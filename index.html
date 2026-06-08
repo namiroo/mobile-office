@@ -222,17 +222,7 @@
   .fs-on .fsbtn{display:none}
   @media (display-mode:standalone),(display-mode:fullscreen){
     .fsbtn{display:none}
-    .fsintro{display:none}
   }
-
-  /* tap-to-start overlay (Figma-style) */
-  .fsintro{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
-    background:radial-gradient(900px 600px at 50% 30%,#1f3a6a,#0f1a2e 70%);color:#fff;cursor:pointer;text-align:center;padding:24px}
-  .fsintro .ico{width:74px;height:74px;border-radius:20px;background:linear-gradient(135deg,var(--blue),var(--accent));display:grid;place-items:center;font-size:30px;font-weight:800;box-shadow:0 12px 34px rgba(26,86,160,.5)}
-  .fsintro .t{font-size:18px;font-weight:800;letter-spacing:-.3px}
-  .fsintro .d{font-size:13px;color:#aebfdc;line-height:1.6;max-width:260px}
-  .fsintro .cta{margin-top:8px;font-size:13.5px;font-weight:700;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:11px 22px;border-radius:999px}
-  .fsintro.hide{display:none}
 </style>
 </head>
 <body>
@@ -421,13 +411,6 @@
     </div>
   </div>
 
-  <!-- tap-to-start: enters immersive fullscreen on first tap -->
-  <div class="fsintro" id="fsintro" onclick="startFs()">
-    <div class="ico">CS</div>
-    <div class="t">CESCO 모바일 오피스</div>
-    <div class="d">화면을 탭하면 상태바·네비게이션 바를 덮고<br>전체 화면으로 프로토타입을 시작합니다</div>
-    <div class="cta">탭하여 전체화면 시작 ▶</div>
-  </div>
 
 <script>
 /* ===================== data ===================== */
@@ -640,15 +623,6 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 /* ===================== PWA service worker ===================== */
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-}
-
-/* ===================== intro ===================== */
-function startFs(){
-  // 몰입형 전체화면: 상태바·삼성 네비바·크롬바를 모두 숨긴다
-  const el=document.documentElement;
-  const req=el.requestFullscreen||el.webkitRequestFullscreen;
-  if(req){ try{ req.call(el); }catch(e){} }
-  document.getElementById('fsintro').classList.add('hide');
 }
 
 /* ===================== init ===================== */
