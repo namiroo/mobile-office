@@ -223,6 +223,21 @@
   @media (display-mode:standalone),(display-mode:fullscreen){
     .fsbtn{display:none}
   }
+
+  /* login screen */
+  .login{position:fixed;inset:0;z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(900px 600px at 50% 25%,#1f3a6a,#0f1a2e 70%);padding:24px}
+  .login.show{display:flex}
+  .login-box{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:stretch;gap:11px;text-align:center}
+  .login-logo{width:64px;height:64px;border-radius:18px;margin:0 auto 4px;background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;font-weight:800;font-size:26px;display:grid;place-items:center;box-shadow:0 12px 34px rgba(26,86,160,.5)}
+  .login-ttl{font-size:19px;font-weight:800;color:#fff;letter-spacing:-.3px}
+  .login-sub{font-size:13px;color:#aebfdc;margin-bottom:8px}
+  .login-input{height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-family:inherit;font-size:14.5px;padding:0 14px;outline:none}
+  .login-input::placeholder{color:#8499bd}
+  .login-input:focus{border-color:var(--accent);background:rgba(255,255,255,.12)}
+  .login-err{font-size:12.5px;color:#ff9b9b;min-height:16px;text-align:left;padding:0 2px}
+  .login .btn.primary{margin-top:4px}
+  .login .btn.primary:disabled{opacity:.6}
 </style>
 </head>
 <body>
@@ -412,6 +427,23 @@
   </div>
 
 
+  <!-- 로그인 화면 (Supabase Auth) — 키 설정 + requireLogin 시에만 표시 -->
+  <div class="login" id="loginScreen">
+    <div class="login-box">
+      <div class="login-logo">CS</div>
+      <div class="login-ttl">CESCO 모바일 오피스</div>
+      <div class="login-sub">계정으로 로그인하세요</div>
+      <input id="loginEmail" class="login-input" type="email" placeholder="이메일" autocomplete="username" />
+      <input id="loginPw" class="login-input" type="password" placeholder="비밀번호" autocomplete="current-password" />
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn primary" id="loginBtn" onclick="doLogin()">로그인</button>
+    </div>
+  </div>
+
+<!-- Supabase 연동: 클라이언트 라이브러리 + 설정 (오프라인이면 조용히 무시됨) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+
 <script>
 /* ===================== data ===================== */
 const services = [
@@ -535,7 +567,7 @@ function renderPartner(){
     el.innerHTML=`<div class="top"><div class="nm">${t.nm}</div><span class="badge ${t.badge}">${t.st}</span></div>
       <div class="meta"><span>🏷️ ${t.type}</span><span>🏢 ${t.cust}</span><span>🕒 ${t.date}</span></div>
       <div class="foot"><button class="btn secondary" style="width:auto;height:36px;padding:0 14px;font-size:12.5px" onclick="event.stopPropagation();openPartner('${t.id}')">자세히 보기</button>
-      <button class="btn primary" style="width:auto;height:36px;padding:0 14px;font-size:12.5px" onclick="event.stopPropagation();openComplete('${t.nm}')">처리 완료</button></div>`;
+      <button class="btn primary" style="width:auto;height:36px;padding:0 14px;font-size:12.5px" onclick="event.stopPropagation();openComplete('${t.id}','${t.nm}')">처리 완료</button></div>`;
     list.appendChild(el);
   });
 }
@@ -575,19 +607,47 @@ function openPartner(id){
     <div style="margin-top:14px;background:var(--light);border-radius:11px;padding:12px;font-size:12.5px;color:var(--ink-2);line-height:1.6"><b style="color:var(--blue)">📌 작업 메모</b><br>${t.memo}</div>`;
   const foot=`<button class="btn ghost" onclick="toast('📷 사진 첨부')">📷 사진</button>
     <button class="btn ghost" onclick="toast('⚠️ 이슈 등록')">⚠️ 이슈</button>
-    <button class="btn primary" onclick="openComplete('${t.nm}')">처리 완료</button>`;
+    <button class="btn primary" onclick="openComplete('${t.id}','${t.nm}')">처리 완료</button>`;
   openSheet(t.nm,body,foot);
 }
 
-function openComplete(nm){
+let completeTarget=null;
+function openComplete(id,nm){
+  // 이전 호출 형태(nm만 전달) 하위호환
+  if(nm===undefined){ nm=id; id=null; }
+  completeTarget=id;
   const body=`<div style="text-align:center;padding:6px 0 4px"><div style="font-size:40px">✅</div>
     <div style="font-size:15px;font-weight:700;margin-top:6px">${nm}</div>
     <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px">처리 완료 보고를 등록합니다</div></div>
     <div class="kv"><span class="k">현장 사진</span><span class="v" style="color:var(--accent)">＋ 사진 첨부 (0)</span></div>
     <div class="kv"><span class="k">고객 서명</span><span class="v" style="color:var(--accent)">✍️ 서명 받기</span></div>
-    <div style="margin-top:12px"><textarea placeholder="처리 내용 메모..." style="width:100%;height:74px;border:1px solid var(--line);border-radius:11px;padding:11px;font-family:inherit;font-size:13px;resize:none"></textarea></div>`;
-  const foot=`<button class="btn ghost" onclick="closeAll()">취소</button><button class="btn primary" onclick="closeAll();toast('✅ 처리 완료 보고가 등록되었습니다')">완료 보고 제출</button>`;
+    <div style="margin-top:12px"><textarea id="completeMemo" placeholder="처리 내용 메모..." style="width:100%;height:74px;border:1px solid var(--line);border-radius:11px;padding:11px;font-family:inherit;font-size:13px;resize:none"></textarea></div>`;
+  const foot=`<button class="btn ghost" onclick="closeAll()">취소</button><button class="btn primary" onclick="submitComplete()">완료 보고 제출</button>`;
   openSheet('처리 완료 등록',body,foot);
+}
+
+// 처리 완료 제출 — Supabase 설정 시 partner_tasks 를 update, 아니면 로컬만 갱신
+async function submitComplete(){
+  const memo=(document.getElementById('completeMemo')||{}).value||'';
+  const id=completeTarget;
+  if(sbReady() && id){
+    try{
+      const T=window.SUPABASE_CONFIG.tables.partnerTasks;
+      const { error } = await sbClient.from(T)
+        .update({ st:'완료', badge:'b-ok', cls:'chk', memo: memo || undefined })
+        .eq('id', id);
+      if(error) throw error;
+      await loadPartner();           // 서버에서 최신 목록 다시 로드
+      renderPartner();
+      closeAll(); toast('✅ 처리 완료 보고가 등록되었습니다'); return;
+    }catch(e){
+      console.warn('[supabase] complete update failed:', e.message);
+      closeAll(); toast('⚠️ 저장 실패 — 네트워크/권한(RLS) 확인'); return;
+    }
+  }
+  // 목업 모드: 로컬 배열만 갱신
+  if(id){ const t=partnerTasks.find(x=>x.id===id); if(t){ t.st='완료'; t.badge='b-ok'; t.cls='chk'; } renderPartner(); }
+  closeAll(); toast('✅ 처리 완료 보고가 등록되었습니다');
 }
 
 /* ===================== 고객 체감효과 슬라이더 ===================== */
@@ -625,8 +685,109 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 
+/* ===================== Supabase 연동 ===================== */
+let sbClient=null;
+const CFG=window.SUPABASE_CONFIG||{};
+
+// 설정/라이브러리가 모두 준비됐는지
+function sbConfigured(){
+  return !!(CFG.url && CFG.anonKey && CFG.anonKey!=='PASTE_YOUR_ANON_PUBLIC_KEY_HERE'
+            && window.supabase && window.supabase.createClient);
+}
+// 클라이언트가 살아있는지
+function sbReady(){ return !!sbClient; }
+
+// const 배열/객체를 참조 유지한 채 내용만 교체
+function replaceArr(arr, rows){ arr.length=0; (rows||[]).forEach(r=>arr.push(r)); }
+
+function renderAll(){ renderSvc(); renderSol(); renderPartner(); }
+
+// ---- 데이터 로드 (실패 시 기존 목업 유지) ----
+async function loadServices(){
+  const T=CFG.tables.services;
+  const { data, error } = await sbClient.from(T).select('*').order('sort',{ascending:true});
+  if(error) throw error;
+  if(data && data.length) replaceArr(services, data);
+}
+async function loadCompanies(){
+  const T=CFG.tables.companies;
+  const { data, error } = await sbClient.from(T).select('*');
+  if(error) throw error;
+  if(data && data.length){
+    replaceArr(companies.sol, data.filter(r=>(r.scope||'sol')==='sol'));
+    // de 는 id 키 객체 형태 — scope==='de' 행으로 재구성
+    const de=data.filter(r=>r.scope==='de');
+    if(de.length){ for(const k in companies.de) delete companies.de[k]; de.forEach(r=>companies.de[r.id]=r); }
+  }
+}
+async function loadPartner(){
+  const T=CFG.tables.partnerTasks;
+  const { data, error } = await sbClient.from(T).select('*');
+  if(error) throw error;
+  if(data) replaceArr(partnerTasks, data);
+}
+async function loadData(){
+  if(!sbReady()) return;
+  const jobs=[['서비스',loadServices],['업체',loadCompanies],['협력작업',loadPartner]];
+  for(const [label,fn] of jobs){
+    try{ await fn(); }
+    catch(e){ console.warn(`[supabase] ${label} 로드 실패 → 목업 유지:`, e.message); }
+  }
+}
+
+// ---- 인증 ----
+function showLogin(on){ document.getElementById('loginScreen').classList.toggle('show',on); }
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pw=document.getElementById('loginPw').value;
+  const errEl=document.getElementById('loginErr');
+  const btn=document.getElementById('loginBtn');
+  errEl.textContent='';
+  if(!email||!pw){ errEl.textContent='이메일과 비밀번호를 입력하세요.'; return; }
+  btn.disabled=true; btn.textContent='로그인 중…';
+  try{
+    const { error } = await sbClient.auth.signInWithPassword({ email, password: pw });
+    if(error) throw error;
+    showLogin(false);
+    await loadData(); renderAll();
+    toast('환영합니다 👋');
+  }catch(e){
+    errEl.textContent='로그인 실패: '+(e.message||'이메일/비밀번호를 확인하세요.');
+  }finally{
+    btn.disabled=false; btn.textContent='로그인';
+  }
+}
+async function logout(){
+  if(sbReady()){ try{ await sbClient.auth.signOut(); }catch(e){} }
+  showLogin(true);
+}
+
+// ---- 부트스트랩 ----
+async function bootstrap(){
+  // 1) 미설정/오프라인 → 목업 모드 (기존 동작)
+  if(!sbConfigured()){
+    renderAll();
+    if(CFG.url && CFG.anonKey==='PASTE_YOUR_ANON_PUBLIC_KEY_HERE')
+      console.info('[supabase] anon key 미설정 → 목업 데이터로 동작 중');
+    return;
+  }
+  // 2) 클라이언트 생성
+  sbClient=window.supabase.createClient(CFG.url, CFG.anonKey, { auth:{ persistSession:true, autoRefreshToken:true } });
+
+  // 3) 세션 확인
+  let session=null;
+  try{ const { data } = await sbClient.auth.getSession(); session=data.session; }catch(e){}
+
+  if(CFG.requireLogin && !session){
+    renderAll();          // 배경에 목업이라도 채워둠
+    showLogin(true);
+    return;
+  }
+  await loadData(); renderAll();
+}
+
 /* ===================== init ===================== */
-renderSvc(); renderSol(); renderPartner();
+bootstrap();
 </script>
 </body>
 </html>
