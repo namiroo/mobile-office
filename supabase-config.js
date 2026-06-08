@@ -10,11 +10,11 @@
 window.SUPABASE_CONFIG = {
   url: 'https://vmifsciiproqceimvrvi.supabase.co',
 
-  // TODO: anon public 키를 여기에 붙여넣으세요 (eyJ... 로 시작하는 긴 JWT)
-  anonKey: 'PASTE_YOUR_ANON_PUBLIC_KEY_HERE',
+  // anon(publishable) 공개 키. (my-academy 프로젝트와 공유)
+  anonKey: 'sb_publishable_WbGwEtZRMFYCPRTvSiRdhA_tm16_o4J',
 
-  // 로그인(Supabase Auth)을 강제할지 여부. 키 설정 후 true 로 두면 로그인 화면이 뜹니다.
-  requireLogin: true,
+  // 아직 Supabase Auth 사용자가 없어 false. 사용자 생성 후 true 로 바꾸면 로그인 화면이 뜹니다.
+  requireLogin: false,
 
   // 실제 테이블 이름으로 맞춰주세요. (컬럼은 현재 목업 키와 동일하다고 가정)
   tables: {
