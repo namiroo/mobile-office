@@ -238,6 +238,30 @@
   .login-err{font-size:12.5px;color:#ff9b9b;min-height:16px;text-align:left;padding:0 2px}
   .login .btn.primary{margin-top:4px}
   .login .btn.primary:disabled{opacity:.6}
+
+  /* sub-page (slide-in detail screen) */
+  .subpage{position:absolute;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column;
+    transform:translateX(100%);transition:transform .28s cubic-bezier(.22,1,.36,1);visibility:hidden}
+  .subpage.show{transform:none;visibility:visible}
+  .subhead{flex:none;display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff}
+  .subhead .back{width:38px;height:38px;flex:none;border-radius:11px;border:1px solid var(--line);background:#fff;font-size:19px;cursor:pointer;display:grid;place-items:center;color:var(--ink)}
+  .subhead h2{font-size:16.5px;font-weight:700;margin:0;letter-spacing:-.3px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .subhead .h-act{font-size:12.5px;font-weight:600;color:var(--accent);background:none;border:none;font-family:inherit;cursor:pointer}
+  .subbody{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 16px calc(24px + env(safe-area-inset-bottom));scroll-behavior:smooth}
+  .subbody::-webkit-scrollbar{width:0}
+  .subbody .sectit:first-child{margin-top:2px}
+  /* form fields used inside sub-pages */
+  .lbl{font-size:12px;color:var(--ink-3);font-weight:600;display:block;margin-top:13px;margin-bottom:0}
+  .fld{width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 13px;font-family:inherit;font-size:14px;margin-top:5px;background:#fff;color:var(--ink)}
+  .fld:focus{outline:none;border-color:var(--accent)}
+  textarea.fld{height:92px;padding:11px 13px;resize:none}
+  select.fld{appearance:none;-webkit-appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238a94a3' d='M6 8 0 0h12z'/%3E%3C/svg%3E") no-repeat right 14px center}
+  .empty{text-align:center;color:var(--ink-3);font-size:13px;padding:40px 10px}
+  .bigstat{background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;border-radius:16px;padding:18px;margin-bottom:13px;box-shadow:0 8px 22px rgba(26,86,160,.28)}
+  .bigstat .v{font-size:30px;font-weight:800;letter-spacing:-.6px}
+  .bigstat .l{font-size:12.5px;opacity:.9;margin-top:2px}
+  .prog{height:8px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-top:12px}
+  .prog > i{display:block;height:100%;background:#fff;border-radius:99px}
 </style>
 </head>
 <body>
@@ -253,8 +277,8 @@
           <div class="ttl" id="appTitle">SC 메인<small id="appSub">영업 · 김세코 프로</small></div>
         </div>
         <div class="acts">
-          <button class="iconbtn" onclick="toast('검색은 프로토타입에서 비활성화됨')">🔍</button>
-          <button class="iconbtn" onclick="toast('알림 3건')"><span class="dot"></span>🔔</button>
+          <button class="iconbtn" onclick="openPage('search')">🔍</button>
+          <button class="iconbtn" onclick="openPage('noti')"><span class="dot"></span>🔔</button>
         </div>
       </div>
 
@@ -268,9 +292,9 @@
             <div class="nm">김세코 프로님</div>
             <div class="role">영업 직원 (SC) · 강남2지점</div>
             <div class="quick">
-              <a onclick="toast('오늘 방문 4건')"><span class="n">4</span>오늘 방문</a>
-              <a onclick="toast('신규 계약 2건')"><span class="n">2</span>신규 계약</a>
-              <a onclick="toast('미처리 3건')"><span class="n">3</span>미처리</a>
+              <a onclick="openPage('visits')"><span class="n">4</span>오늘 방문</a>
+              <a onclick="openPage('contracts')"><span class="n">2</span>신규 계약</a>
+              <a onclick="openPage('todo')"><span class="n">3</span>미처리</a>
             </div>
           </div>
 
@@ -295,9 +319,9 @@
             <button class="more" id="editBtn" onclick="toggleEdit()">순서 편집</button>
           </div>
           <div class="svcgrid" id="svcGrid"></div>
-          <button class="btn ghost" style="margin-top:4px" onclick="toast('주요서비스 전체 보기 (12개)')">＋ 주요서비스 전체 보기</button>
+          <button class="btn ghost" style="margin-top:4px" onclick="openPage('allsvc')">＋ 주요서비스 전체 보기</button>
 
-          <div class="sectit"><h3>최근 활동</h3><button class="more" onclick="toast('전체 활동 보기')">전체</button></div>
+          <div class="sectit"><h3>최근 활동</h3><button class="more" onclick="openPage('activity')">전체</button></div>
           <div class="card" style="padding:4px 14px">
             <div class="row"><div class="ic">📝</div><div class="tx"><div class="t">스타벅스 강남점 계약 검토</div><div class="d">제안서 발송 완료</div></div><span class="badge b-ok">완료</span></div>
             <div class="row"><div class="ic">📞</div><div class="tx"><div class="t">롯데마트 잠실 담당자 통화</div><div class="d">재계약 일정 협의</div></div><span class="badge b-run">진행중</span></div>
@@ -312,8 +336,8 @@
             <div class="nm">박기술 기사님</div>
             <div class="role">기술 직원 (DE) · 방제 1팀</div>
             <div class="quick">
-              <a onclick="toast('금일 작업 6건')"><span class="n">6</span>금일 작업</a>
-              <a onclick="toast('완료 2건')"><span class="n">2</span>완료</a>
+              <a onclick="openPage('de_jobs')"><span class="n">6</span>금일 작업</a>
+              <a onclick="openPage('de_done')"><span class="n">2</span>완료</a>
               <a onclick="setMod('sol')"><span class="n">4</span>대상 업체</a>
             </div>
           </div>
@@ -325,11 +349,11 @@
 
           <div class="sectit"><h3>빠른 실행</h3><span class="badge b-run">원탭 처리</span></div>
           <div class="qactions">
-            <div class="qa" onclick="toast('서비스 접수 등록')"><div class="ic">➕</div><div class="nm">접수등록</div></div>
-            <div class="qa" onclick="toast('점검 체크리스트')"><div class="ic">✅</div><div class="nm">점검</div></div>
-            <div class="qa" onclick="toast('약제 사용량 입력')"><div class="ic">🧪</div><div class="nm">약제</div></div>
+            <div class="qa" onclick="openPage('de_intake')"><div class="ic">➕</div><div class="nm">접수등록</div></div>
+            <div class="qa" onclick="openPage('de_check')"><div class="ic">✅</div><div class="nm">점검</div></div>
+            <div class="qa" onclick="openPage('de_chem')"><div class="ic">🧪</div><div class="nm">약제</div></div>
             <div class="qa" onclick="openSat()"><div class="ic">📈</div><div class="nm">체감효과</div></div>
-            <div class="qa" onclick="toast('전자 서명')"><div class="ic">✍️</div><div class="nm">서명</div></div>
+            <div class="qa" onclick="openPage('de_sign')"><div class="ic">✍️</div><div class="nm">서명</div></div>
           </div>
 
           <div class="sectit"><h3>오늘의 업무</h3><button class="more" onclick="setMod('sol')">SOL 연동</button></div>
@@ -374,7 +398,7 @@
           <div class="card" style="display:flex;align-items:center;gap:13px">
             <div style="width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;display:grid;place-items:center;font-size:22px;font-weight:800">김</div>
             <div style="flex:1"><div style="font-size:16px;font-weight:700">김세코 프로</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">영업 직원 (SC) · 강남2지점</div></div>
-            <button class="iconbtn" onclick="toast('프로필 편집')">›</button>
+            <button class="iconbtn" onclick="openPage('profile')">›</button>
           </div>
 
           <div class="sectit"><h3>개인정보 공개 설정</h3><span class="badge b-run">차등 제공</span></div>
@@ -386,16 +410,16 @@
 
           <div class="sectit"><h3>나의 메뉴 관리</h3><button class="more" onclick="setMod('sc');toggleEdit()">편집</button></div>
           <div class="card" style="padding:4px 14px">
-            <div class="row"><div class="ic">⭐</div><div class="tx"><div class="t">즐겨찾기 메뉴</div><div class="d">8개 · 드래그로 순서 변경</div></div><span class="chev">›</span></div>
-            <div class="row"><div class="ic">🧩</div><div class="tx"><div class="t">주요서비스 구성</div><div class="d">개인별 노출/순서 커스터마이징</div></div><span class="chev">›</span></div>
-            <div class="row"><div class="ic">🔔</div><div class="tx"><div class="t">알림 설정</div><div class="d">업무·공지 알림 관리</div></div><span class="chev">›</span></div>
+            <div class="row" onclick="openPage('favmenu')" style="cursor:pointer"><div class="ic">⭐</div><div class="tx"><div class="t">즐겨찾기 메뉴</div><div class="d">8개 · 드래그로 순서 변경</div></div><span class="chev">›</span></div>
+            <div class="row" onclick="closePage();setMod('sc');toggleEdit()" style="cursor:pointer"><div class="ic">🧩</div><div class="tx"><div class="t">주요서비스 구성</div><div class="d">개인별 노출/순서 커스터마이징</div></div><span class="chev">›</span></div>
+            <div class="row" onclick="openPage('noti_settings')" style="cursor:pointer"><div class="ic">🔔</div><div class="tx"><div class="t">알림 설정</div><div class="d">업무·공지 알림 관리</div></div><span class="chev">›</span></div>
           </div>
 
           <div class="sectit"><h3>지원</h3></div>
           <div class="card" style="padding:4px 14px">
-            <div class="row"><div class="ic">❓</div><div class="tx"><div class="t">도움말 / FAQ</div></div><span class="chev">›</span></div>
-            <div class="row"><div class="ic">🛡️</div><div class="tx"><div class="t">개인정보 처리방침</div><div class="d">WCAG 2.1 AA · 개인정보보호법 준수</div></div><span class="chev">›</span></div>
-            <div class="row"><div class="ic">↩️</div><div class="tx"><div class="t">로그아웃</div></div><span class="chev">›</span></div>
+            <div class="row" onclick="openPage('faq')" style="cursor:pointer"><div class="ic">❓</div><div class="tx"><div class="t">도움말 / FAQ</div></div><span class="chev">›</span></div>
+            <div class="row" onclick="openPage('privacy')" style="cursor:pointer"><div class="ic">🛡️</div><div class="tx"><div class="t">개인정보 처리방침</div><div class="d">WCAG 2.1 AA · 개인정보보호법 준수</div></div><span class="chev">›</span></div>
+            <div class="row" onclick="confirmLogout()" style="cursor:pointer"><div class="ic">↩️</div><div class="tx"><div class="t">로그아웃</div></div><span class="chev">›</span></div>
           </div>
           <div class="note">버전 1.0.0 (Prototype) · CESCO 공통 디자인 시스템</div>
         </section>
@@ -410,6 +434,16 @@
         <button data-mod="partner" onclick="setMod('partner')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20.5v-1.8a3.6 3.6 0 0 0-3.6-3.6H6.6A3.6 3.6 0 0 0 3 18.7v1.8"/><circle cx="9.3" cy="7.3" r="3.6"/><path d="M21 20.5v-1.8a3.6 3.6 0 0 0-2.7-3.48"/><path d="M15.6 3.92a3.6 3.6 0 0 1 0 6.96"/></svg></span><span class="lb">협력</span></button>
         <button data-mod="my" onclick="setMod('my')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 20.5v-1.9a4 4 0 0 0-4-4H8.5a4 4 0 0 0-4 4v1.9"/><circle cx="12" cy="7.3" r="4"/></svg></span><span class="lb">나의</span></button>
       </nav>
+
+      <!-- slide-in 서브 페이지 (버튼 → 상세 화면) -->
+      <div class="subpage" id="subpage">
+        <div class="subhead">
+          <button class="back" onclick="closePage()">‹</button>
+          <h2 id="subTitle">상세</h2>
+          <button class="h-act" id="subAct" style="display:none"></button>
+        </div>
+        <div class="subbody" id="subBody"></div>
+      </div>
 
       <!-- scrim + sheet + drawer -->
       <div class="scrim" id="scrim" onclick="closeAll()"></div>
@@ -477,6 +511,7 @@ const satFaces=['😟','🙁','😐','🙂','😄'];
 /* ===================== module switch ===================== */
 const titles={sc:['SC 메인','영업 · 김세코 프로'],de:['DE 메인','기술 · 박기술 기사'],sol:['SOL 플래너','기간별 업체 관리'],partner:['협력업체 포털','대한설비 파트너'],my:['나의','계정 · 개인정보']};
 function setMod(m){
+  closePage();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   document.getElementById('view-'+m).classList.add('on');
   document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.mod===m));
@@ -513,7 +548,7 @@ function renderSvc(){
     const d=document.createElement('div');
     d.className='svc'+(editing?' handle':''); d.draggable=editing; d.dataset.i=i;
     d.innerHTML=`<div class="ic">${s.ic}</div><div class="nm">${s.nm}</div>`+(s.n?`<span class="nbadge">${s.n}</span>`:'');
-    if(!editing) d.onclick=()=>toast(s.nm+' 열기');
+    if(!editing) d.onclick=()=>openPage(SVC_PAGE[s.nm]||'');
     grid.appendChild(d);
   });
   if(editing) enableDrag();
@@ -729,6 +764,150 @@ function skeletonThen(id,fn){
 }
 let tt;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),1800); }
+
+/* ===================== 서브 페이지 (버튼 → 상세 화면) ===================== */
+// 템플릿 헬퍼
+function pgSec(t,a){ return `<div class="sectit"><h3>${t}</h3>${a||''}</div>`; }
+function pgNote(t){ return `<div class="note">${t}</div>`; }
+function pgRows(rows){
+  return `<div class="card" style="padding:4px 14px">`+rows.map(r=>{
+    const right = r.badge ? `<span class="badge ${r.badge.c}">${r.badge.t}</span>`
+                : r.rt ? `<span class="rt">${r.rt}</span>`
+                : (r.chev===false?'':'<span class="chev">›</span>');
+    const click = r.onclick ? ` onclick="${r.onclick}" style="cursor:pointer"` : '';
+    return `<div class="row"${click}>${r.ic?`<div class="ic">${r.ic}</div>`:''}<div class="tx"><div class="t">${r.t}</div>${r.d?`<div class="d">${r.d}</div>`:''}</div>${right}</div>`;
+  }).join('')+`</div>`;
+}
+function pgStats(items){ return `<div class="stats">`+items.map(s=>`<div class="stat"><div class="lab">${s.lab}</div><div class="val">${s.val}</div><div class="sub">${s.sub||''}</div></div>`).join('')+`</div>`; }
+function pgField(l,html){ return `<label class="lbl">${l}</label>${html}`; }
+function pgBtn(l,onclick,cls){ return `<button class="btn ${cls||'primary'}" style="margin-top:16px" onclick="${onclick}">${l}</button>`; }
+function pgSaved(msg){ closePage(); toast(msg||'✅ 저장되었습니다'); }
+function toggleCheck(el){ const ic=el.querySelector('.ic'); const on=ic.textContent.trim()==='✅'; ic.textContent=on?'☐':'✅'; el.style.opacity=on?'1':'.55'; }
+
+// 네비게이션
+function openPage(key){
+  const p=PAGES[key]; if(!p){ toast('준비 중인 화면입니다'); return; }
+  document.getElementById('subTitle').textContent=(typeof p.title==='function'?p.title():p.title)||'상세';
+  document.getElementById('subBody').innerHTML=p.body();
+  const act=document.getElementById('subAct');
+  if(p.act){ act.style.display=''; act.textContent=p.act.label; act.setAttribute('onclick',p.act.onclick); }
+  else { act.style.display='none'; act.removeAttribute('onclick'); }
+  document.getElementById('subBody').scrollTop=0;
+  document.getElementById('subpage').classList.add('show');
+}
+function closePage(){ document.getElementById('subpage').classList.remove('show'); }
+function confirmLogout(){
+  openSheet('로그아웃','<div style="text-align:center;padding:8px 0"><div style="font-size:38px">👋</div><div style="font-size:14px;margin-top:8px">로그아웃 하시겠어요?</div></div>',
+    '<button class="btn ghost" onclick="closeAll()">취소</button><button class="btn primary" onclick="closeAll();logout()">로그아웃</button>');
+}
+
+const SVC_PAGE={'영업일지':'saleslog','계약관리':'contracts','고객사':'customers','방문일정':'visits','견적/청구':'billing','실적현황':'perf','서비스':'services','고객문의':'inquiries'};
+
+const PAGES={
+  /* ===== 공통(앱바) ===== */
+  search:{title:'검색',body:()=>pgNote('고객사·계약·서비스 통합 검색 (프로토타입)')+
+    `<input class="fld" placeholder="🔍 고객사, 계약번호, 주소 검색" style="margin-bottom:6px">`+pgSec('최근 검색어')+
+    pgRows([{ic:'🕘',t:'스타벅스 강남R점',d:'고객사',onclick:"closePage();setMod('sol')"},{ic:'🕘',t:'롯데마트 잠실점',d:'고객사'},{ic:'🕘',t:'계약 2026-0512',d:'계약번호'}])},
+  noti:{title:'알림',act:{label:'모두 읽음',onclick:"toast('모든 알림을 읽음 처리했습니다')"},body:()=>
+    pgRows([{ic:'🔴',t:'긴급 작업 배정',d:'그린푸드 1공장 AS · 오늘 16:00',badge:{c:'b-err',t:'긴급'}},
+      {ic:'📅',t:'방문 일정 알림',d:'CGV 용산 현장 실사 · 내일 14:00',badge:{c:'b-wait',t:'내일'}},
+      {ic:'✅',t:'계약 승인 완료',d:'스타벅스 강남R점 재계약',badge:{c:'b-ok',t:'완료'}},
+      {ic:'📢',t:'신규 약제 안전 교육',d:'6/10까지 모바일 교육 이수 필수'}])},
+
+  /* ===== SC 주요 서비스 8종 ===== */
+  saleslog:{title:'영업일지',body:()=>pgSec('이번 주 일지','<span class="badge b-run">5건</span>')+
+    pgRows([{ic:'📝',t:'스타벅스 강남R점 방문',d:'06.02 · 재계약 제안',badge:{c:'b-ok',t:'완료'}},
+      {ic:'📝',t:'롯데마트 잠실 통화',d:'06.01 · 일정 협의',badge:{c:'b-run',t:'진행중'}},
+      {ic:'📝',t:'CGV 용산 실사 준비',d:'05.31 · 견적 검토',badge:{c:'b-ok',t:'완료'}}])+
+    pgBtn('＋ 새 일지 작성',"openPage('saleslog_new')")},
+  saleslog_new:{title:'영업일지 작성',body:()=>pgField('고객사','<input class="fld" placeholder="고객사명">')+
+    pgField('활동 유형','<select class="fld"><option>방문</option><option>통화</option><option>제안</option><option>계약</option></select>')+
+    pgField('내용','<textarea class="fld" placeholder="활동 내용을 입력하세요..."></textarea>')+
+    pgBtn('일지 저장',"pgSaved('✅ 영업일지가 저장되었습니다')")},
+  contracts:{title:'계약관리',body:()=>pgSec('진행 중 계약','<span class="badge b-run">2건</span>')+
+    pgRows([{ic:'🤝',t:'스타벅스 강남R점',d:'재계약 · ₩ 12.5M / 년',badge:{c:'b-run',t:'검토중'}},
+      {ic:'🤝',t:'롯데마트 잠실점',d:'신규 · ₩ 8.0M / 년',badge:{c:'b-wait',t:'대기'}}])+
+    pgSec('최근 체결')+pgRows([{ic:'✅',t:'CGV 용산아이파크',d:'2026.05.20 체결 · ₩ 6.2M',badge:{c:'b-ok',t:'완료'}}])+
+    pgBtn('＋ 새 계약 등록',"toast('계약 등록 (프로토타입)')")},
+  customers:{title:'고객사',body:()=>pgNote('담당 고객사 목록 — 탭하면 상세')+
+    pgRows((companies.sol||[]).map(c=>({ic:'🏢',t:c.nm,d:c.type+' · '+(c.addr||'').split(' ').slice(0,2).join(' '),onclick:`closePage();openCompany('sol:${c.id}')`})))},
+  visits:{title:'방문일정',body:()=>pgSec('오늘 일정','<span class="badge b-run">4건</span>')+
+    pgRows([{ic:'📅',t:'한빛아파트 101동',d:'정기 방제',rt:'09:30'},{ic:'📅',t:'그린푸드 공장',d:'긴급 방역',rt:'11:00'},
+      {ic:'📅',t:'메가몰 지하주차장',d:'설치 점검',rt:'14:30'},{ic:'📅',t:'CGV 용산 실사',d:'현장 실사',rt:'16:00'}])+
+    pgBtn('＋ 일정 추가',"toast('일정 추가 (프로토타입)')")},
+  billing:{title:'견적/청구',body:()=>pgStats([{lab:'이번 달 청구',val:'₩ 24.8M',sub:'12건'},{lab:'미수금',val:'₩ 3.2M',sub:'2건'}])+
+    pgSec('최근 견적/청구')+pgRows([{ic:'💳',t:'스타벅스 강남R점',d:'견적서 · ₩ 12.5M',badge:{c:'b-wait',t:'대기'}},
+      {ic:'🧾',t:'롯데마트 잠실점',d:'청구서 · ₩ 8.0M',badge:{c:'b-ok',t:'발행'}}])+
+    pgBtn('＋ 견적서 작성',"toast('견적서 작성 (프로토타입)')")},
+  perf:{title:'실적현황',body:()=>`<div class="bigstat"><div class="v">₩ 38.5M</div><div class="l">6월 계약 달성 · 목표 ₩ 50M</div><div class="prog"><i style="width:77%"></i></div></div>`+
+    pgStats([{lab:'신규 계약',val:'2건',sub:'이번 달'},{lab:'재계약',val:'5건',sub:'이번 달'},{lab:'방문',val:'48회',sub:'이번 달'},{lab:'달성률',val:'77%',sub:'월 목표'}])+
+    pgSec('월별 추이')+pgRows([{ic:'📈',t:'4월',d:'₩ 41.2M',rt:'103%'},{ic:'📈',t:'5월',d:'₩ 45.8M',rt:'114%'},{ic:'📈',t:'6월 (진행)',d:'₩ 38.5M',rt:'77%'}])},
+  services:{title:'서비스',body:()=>pgSec('서비스 요청','<span class="badge b-err">1 신규</span>')+
+    pgRows([{ic:'🧪',t:'정기 방제 요청',d:'그린푸드 1공장',badge:{c:'b-err',t:'신규'}},
+      {ic:'🧪',t:'IoT 센서 점검',d:'롯데마트 잠실점',badge:{c:'b-run',t:'진행중'}}])+
+    pgBtn('＋ 서비스 접수',"openPage('de_intake')")},
+  inquiries:{title:'고객문의',body:()=>pgSec('미답변 문의','<span class="badge b-err">3건</span>')+
+    pgRows([{ic:'📞',t:'스타벅스 강남R점',d:'방제 주기 문의',badge:{c:'b-err',t:'미답변'}},
+      {ic:'💬',t:'롯데마트 잠실점',d:'청구서 재발행 요청',badge:{c:'b-err',t:'미답변'}},
+      {ic:'📧',t:'CGV 용산',d:'서비스 일정 변경',badge:{c:'b-err',t:'미답변'}}])+
+    pgBtn('답변 작성',"toast('답변 작성 (프로토타입)')")},
+  allsvc:{title:'전체 서비스',body:()=>{const extra=[{ic:'📊',nm:'통계'},{ic:'🗺️',nm:'지도'},{ic:'📁',nm:'문서함'},{ic:'⚙️',nm:'환경설정'}];
+    const all=[...(services||[]).map(s=>({ic:s.ic,nm:s.nm})),...extra];
+    return pgNote('전체 서비스 ('+all.length+'개)')+pgRows(all.map(s=>({ic:s.ic,t:s.nm,onclick:`openPage('${SVC_PAGE[s.nm]||''}')`})));}},
+  activity:{title:'최근 활동',body:()=>pgRows([{ic:'📝',t:'스타벅스 강남점 계약 검토',d:'제안서 발송 완료 · 06.02',badge:{c:'b-ok',t:'완료'}},
+    {ic:'📞',t:'롯데마트 잠실 담당자 통화',d:'재계약 일정 협의 · 06.01',badge:{c:'b-run',t:'진행중'}},
+    {ic:'📅',t:'CGV 용산 현장 실사',d:'내일 14:00 예정 · 05.31',badge:{c:'b-wait',t:'대기'}},
+    {ic:'🤝',t:'그린푸드 신규 상담',d:'방제 계약 문의 · 05.30',badge:{c:'b-ok',t:'완료'}}])},
+  todo:{title:'미처리 업무',body:()=>pgSec('미처리','<span class="badge b-err">3건</span>')+
+    pgRows([{ic:'📞',t:'고객문의 답변',d:'3건 미답변',badge:{c:'b-err',t:'D-0'},onclick:"openPage('inquiries')"},
+      {ic:'🧾',t:'견적서 발송',d:'스타벅스 강남R점',badge:{c:'b-wait',t:'D-1'}},
+      {ic:'✍️',t:'서비스 보고 미제출',d:'그린푸드 1공장',badge:{c:'b-err',t:'D-0'}}])},
+
+  /* ===== DE 빠른 실행 / 작업 ===== */
+  de_jobs:{title:'금일 작업',body:()=>{const de=Object.values(companies.de||{});
+    const rows=de.map((c,i)=>({ic:'🏢',t:c.nm,d:c.type+' · '+c.next,onclick:`closePage();openCompany('de${i+1}')`}));
+    rows.push({ic:'🧪',t:'세븐일레븐 역삼점',d:'정기 방제 · 15:30'},{ic:'🏬',t:'현대백화점 무역점',d:'점검 · 16:30'},{ic:'🍽️',t:'본가 한정식',d:'AS · 17:30'});
+    return pgSec('금일 작업','<span class="badge b-run">'+rows.length+'건</span>')+pgRows(rows);}},
+  de_done:{title:'완료 작업',body:()=>pgSec('완료','<span class="badge b-ok">2건</span>')+
+    pgRows([{ic:'✅',t:'한빛아파트 101동',d:'정기 방제 · 09:30 완료',badge:{c:'b-ok',t:'완료'}},
+      {ic:'✅',t:'세븐일레븐 역삼점',d:'정기 방제 · 11:20 완료',badge:{c:'b-ok',t:'완료'}}])},
+  de_intake:{title:'서비스 접수등록',body:()=>pgField('고객사','<input class="fld" placeholder="고객사명">')+
+    pgField('서비스 유형','<select class="fld"><option>정기 방제</option><option>긴급 방역</option><option>설치</option><option>점검</option><option>AS</option></select>')+
+    pgField('희망 일시','<input class="fld" type="datetime-local">')+
+    pgField('요청 내용','<textarea class="fld" placeholder="요청 내용을 입력하세요..."></textarea>')+
+    pgBtn('접수 등록',"pgSaved('✅ 서비스가 접수되었습니다')")},
+  de_check:{title:'점검 체크리스트',body:()=>pgNote('현장 점검 항목을 탭하여 확인하세요')+
+    `<div class="card" style="padding:4px 14px">`+['포충등 작동 상태','트랩 설치 위치 확인','약제 잔량 점검','출입구 방충 상태','쥐 흔적 모니터링'].map(t=>
+      `<div class="row" onclick="toggleCheck(this)" style="cursor:pointer"><div class="ic">☐</div><div class="tx"><div class="t">${t}</div></div></div>`).join('')+`</div>`+
+    pgBtn('점검 완료',"pgSaved('✅ 점검이 완료되었습니다')")},
+  de_chem:{title:'약제 사용량 입력',body:()=>pgField('약제명','<select class="fld"><option>잔류성 살충제 A</option><option>연막 살충제 B</option><option>쥐약 C</option></select>')+
+    pgField('사용량 (ml/g)','<input class="fld" type="number" placeholder="예: 250">')+
+    pgField('대상 구역','<input class="fld" placeholder="예: 지하 식품관">')+
+    pgBtn('사용량 저장',"pgSaved('✅ 약제 사용량이 기록되었습니다')")},
+  de_sign:{title:'전자 서명',body:()=>pgNote('고객 서명을 받아 작업을 완료 처리합니다')+
+    `<div style="background:#fff;border:1.5px dashed var(--line);border-radius:14px;height:190px;display:grid;place-items:center;color:var(--ink-3);font-size:13px">✍️ 이곳에 서명해 주세요</div>`+
+    pgField('서명자(고객)','<input class="fld" placeholder="이름">')+
+    pgBtn('서명 완료',"pgSaved('✅ 서명이 저장되었습니다')")},
+
+  /* ===== 나의 ===== */
+  profile:{title:'프로필 편집',body:()=>pgField('이름','<input class="fld" value="김세코 프로">')+
+    pgField('직무','<input class="fld" value="영업 직원 (SC)">')+
+    pgField('지점','<input class="fld" value="강남2지점">')+
+    pgField('연락처','<input class="fld" value="010-1234-5678">')+
+    pgBtn('저장',"pgSaved('✅ 프로필이 저장되었습니다')")},
+  favmenu:{title:'즐겨찾기 메뉴',body:()=>pgNote('자주 쓰는 메뉴 — SC홈에서 드래그로 순서 변경')+
+    pgRows((services||[]).map(s=>({ic:s.ic,t:s.nm,onclick:`openPage('${SVC_PAGE[s.nm]||''}')`})))+
+    pgBtn('순서 편집',"closePage();setMod('sc');toggleEdit()","secondary")},
+  noti_settings:{title:'알림 설정',body:()=>pgSec('알림 유형')+
+    `<div class="card" style="padding:2px 14px">`+[['업무 배정 알림',true],['일정 리마인더',true],['공지/교육 알림',true],['마케팅 알림',false]].map(([t,on])=>
+      `<div class="setrow"><div class="ic">🔔</div><div class="tx"><div class="t">${t}</div></div><button class="switch${on?' on':''}" onclick="setSwitch(this)"></button></div>`).join('')+`</div>`},
+  faq:{title:'도움말 / FAQ',body:()=>pgRows([{ic:'❓',t:'근무시간은 어떻게 공개하나요?',d:'홈 화면 카드의 자물쇠 아이콘을 누르세요'},
+    {ic:'❓',t:'주요서비스 순서를 바꾸려면?',d:'주요 서비스 > 순서 편집에서 드래그'},
+    {ic:'❓',t:'오프라인에서도 쓸 수 있나요?',d:'SOL 데이터는 캐시되어 오프라인 조회 가능'},
+    {ic:'❓',t:'협력업체 처리완료는?',d:'협력 탭 > 처리 완료 버튼'}])},
+  privacy:{title:'개인정보 처리방침',body:()=>pgNote('개인정보보호법 및 WCAG 2.1 AA 준수')+
+    `<div class="card"><div style="font-size:13px;line-height:1.75;color:var(--ink-2)"><b>1. 수집 항목</b><br>이름, 직무, 연락처, 근무·실적 데이터<br><br><b>2. 이용 목적</b><br>업무 배정, 일정 관리, 실적 집계<br><br><b>3. 공개 범위</b><br>근무시간·계약금액은 본인 선택에 따라 차등 공개<br><br><b>4. 보관 기간</b><br>관련 법령에 따른 기간 보관 후 파기</div></div>`}
+};
 
 /* ===================== PWA service worker ===================== */
 if('serviceWorker' in navigator){
