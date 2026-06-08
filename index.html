@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#1A56A0" />
+<link rel="manifest" href="manifest.json" />
+<title>CESCO 모바일 오피스 · Prototype</title>
+<style>
+  /* ===== Design tokens (PRD §6 디자인 시스템) ===== */
+  :root{
+    --blue:#1A56A0;        /* Primary */
+    --blue-deep:#114080;
+    --accent:#2E75B6;      /* Accent */
+    --light:#E8F0F9;       /* Brand light */
+    --ink:#1d2530;
+    --ink-2:#55606e;
+    --ink-3:#8a94a3;
+    --line:#e7ebf0;
+    --bg:#f3f5f8;
+    --card:#ffffff;
+    --ok:#1E9E5A;          /* 완료 */
+    --run:#2E75B6;         /* 진행중 */
+    --wait:#E08A1E;        /* 대기 */
+    --err:#D64545;         /* 오류 */
+    --radius:14px;
+    --shadow:0 2px 8px rgba(17,40,80,.08);
+    --shadow-lg:0 8px 28px rgba(17,40,80,.16);
+    --font:'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo','Noto Sans KR',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  html,body{height:100dvh}
+  body{
+    font-family:var(--font);color:var(--ink);
+    background:var(--bg);
+    display:flex;align-items:stretch;justify-content:center;
+    min-height:100vh;
+  }
+
+  /* ===== App container ===== */
+  .phone{
+    width:100%;height:100vh;height:100dvh;background:var(--bg);position:relative;
+  }
+  .screen{
+    position:relative;width:100%;height:100vh;height:100dvh;background:var(--bg);overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+
+  /* app bar */
+  .appbar{flex:none;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .appbar .brand{display:flex;align-items:center;gap:10px}
+  .appbar .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;font-weight:800;display:grid;place-items:center;font-size:15px;letter-spacing:-1px}
+  .appbar .ttl{font-size:16.5px;font-weight:700;letter-spacing:-.3px}
+  .appbar .ttl small{display:block;font-size:11px;color:var(--ink-3);font-weight:500;margin-top:1px}
+  .appbar .acts{display:flex;gap:8px}
+  .iconbtn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;font-size:16px;cursor:pointer;position:relative}
+  .iconbtn .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--err);border:1.5px solid #fff}
+
+  /* content area */
+  .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 16px calc(96px + env(safe-area-inset-bottom));scroll-behavior:smooth}
+  .content::-webkit-scrollbar{width:0}
+  .view{display:none;animation:fade .25s ease}
+  .view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* generic */
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px;margin-bottom:13px}
+  .sectit{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 9px}
+  .sectit h3{font-size:14.5px;margin:0;font-weight:700;letter-spacing:-.2px}
+  .sectit .more{font-size:12.5px;color:var(--accent);font-weight:600;cursor:pointer;background:none;border:none;font-family:inherit}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;line-height:1.4}
+  .b-ok{background:#e4f6ec;color:var(--ok)} .b-run{background:#e6f0fa;color:var(--run)}
+  .b-wait{background:#fcf0dd;color:#b9701a} .b-err{background:#fbe6e6;color:var(--err)}
+  .btn{height:48px;border-radius:12px;border:none;font-family:inherit;font-size:14.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+  .btn.primary{background:var(--blue);color:#fff;box-shadow:0 4px 14px rgba(26,86,160,.3)}
+  .btn.secondary{background:var(--light);color:var(--blue)}
+  .btn.ghost{background:#fff;color:var(--ink-2);border:1px solid var(--line)}
+  .btn:active{transform:scale(.985)}
+
+  /* greeting / hero */
+  .hero{background:linear-gradient(135deg,var(--blue) 0%,#225a9e 55%,var(--accent) 100%);border-radius:18px;padding:17px 18px;color:#fff;margin-bottom:14px;box-shadow:0 8px 22px rgba(26,86,160,.32);position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.08)}
+  .hero .hi{font-size:13px;opacity:.9}
+  .hero .nm{font-size:20px;font-weight:800;margin:2px 0 2px;letter-spacing:-.4px}
+  .hero .role{font-size:12px;opacity:.85}
+  .hero .quick{display:flex;gap:8px;margin-top:14px}
+  .hero .quick a{flex:1;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);border-radius:11px;padding:9px 6px;text-align:center;font-size:11.5px;font-weight:600;cursor:pointer;color:#fff;text-decoration:none}
+  .hero .quick a .n{display:block;font-size:17px;font-weight:800;margin-bottom:1px}
+
+  /* privacy stat cards */
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:6px}
+  .stat{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:13px 14px;position:relative}
+  .stat .lab{font-size:11.5px;color:var(--ink-3);font-weight:600;display:flex;align-items:center;gap:5px}
+  .stat .val{font-size:20px;font-weight:800;margin-top:7px;letter-spacing:-.5px;transition:.2s}
+  .stat .val.masked{filter:blur(7px);user-select:none}
+  .stat .sub{font-size:11px;color:var(--ink-3);margin-top:3px}
+  .stat .lock{position:absolute;top:11px;right:11px;font-size:12px;color:var(--ink-3);cursor:pointer;background:#f3f5f8;width:24px;height:24px;border-radius:7px;display:grid;place-items:center}
+  .stat.priv .lock{color:var(--blue);background:var(--light)}
+
+  /* services grid (reorderable) */
+  .svcgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px}
+  .svc{background:#fff;border-radius:13px;box-shadow:var(--shadow);padding:11px 4px 9px;text-align:center;cursor:pointer;position:relative;transition:.15s}
+  .svc .ic{width:42px;height:42px;border-radius:13px;margin:0 auto 6px;display:grid;place-items:center;font-size:19px;background:var(--light);color:var(--blue)}
+  .svc .nm{font-size:11px;font-weight:600;color:var(--ink-2);line-height:1.25}
+  .svc .nbadge{position:absolute;top:5px;right:7px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--err);color:#fff;font-size:9.5px;font-weight:800;display:grid;place-items:center}
+  .svc:active{transform:scale(.95)}
+  /* reorder mode */
+  .editing .svc{animation:wiggle .35s infinite;cursor:grab}
+  .editing .svc .ic{background:#eef2f7}
+  .svc.dragging{opacity:.4}
+  .svc.handle::before{content:"⋮⋮";position:absolute;top:4px;left:6px;color:var(--ink-3);font-size:10px;letter-spacing:-2px}
+  @keyframes wiggle{0%,100%{transform:rotate(-1.1deg)}50%{transform:rotate(1.1deg)}}
+
+  /* list rows */
+  .row{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .ic{width:40px;height:40px;border-radius:11px;background:var(--light);color:var(--blue);display:grid;place-items:center;font-size:17px;flex:none}
+  .row .tx{flex:1;min-width:0}
+  .row .tx .t{font-size:13.5px;font-weight:600}
+  .row .tx .d{font-size:11.5px;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .rt{font-size:11.5px;color:var(--ink-3);text-align:right;flex:none}
+  .chev{color:var(--ink-3);font-size:16px;flex:none}
+
+  /* company / task cards */
+  .ccard{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:11px;cursor:pointer;border-left:4px solid var(--accent)}
+  .ccard.ins{border-left-color:var(--run)} .ccard.chk{border-left-color:var(--wait)} .ccard.as{border-left-color:var(--err)}
+  .ccard .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .ccard .nm{font-size:14.5px;font-weight:700;letter-spacing:-.2px}
+  .ccard .meta{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:9px}
+  .ccard .meta span{font-size:11.5px;color:var(--ink-2);display:flex;align-items:center;gap:4px}
+  .ccard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
+  .ccard .detail{font-size:12px;font-weight:700;color:var(--accent)}
+
+  /* date presets / filter */
+  .seg{display:flex;background:#eef1f5;border-radius:11px;padding:3px;gap:2px;margin-bottom:13px}
+  .seg button{flex:1;border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink-2);padding:8px 0;border-radius:8px;cursor:pointer}
+  .seg button.on{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+  /* DE quick actions */
+  .qactions{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+  .qa{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:11px 2px;text-align:center;cursor:pointer}
+  .qa .ic{width:38px;height:38px;border-radius:50%;margin:0 auto 5px;display:grid;place-items:center;font-size:16px;background:var(--light);color:var(--blue)}
+  .qa .nm{font-size:10px;font-weight:600;color:var(--ink-2)}
+
+  /* notice */
+  .notice{background:linear-gradient(100deg,#fff7ec,#fffdf8);border:1px solid #f3e2c4;border-radius:12px;padding:11px 13px;display:flex;gap:10px;align-items:flex-start;margin-bottom:13px}
+  .notice .i{font-size:15px}
+  .notice .t{font-size:12.5px;font-weight:700;color:#9a6a14}
+  .notice .d{font-size:11.5px;color:#a9803a;margin-top:2px;line-height:1.5}
+
+  /* settings toggles */
+  .setrow{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--line)}
+  .setrow:last-child{border-bottom:none}
+  .setrow .ic{width:38px;height:38px;border-radius:11px;background:var(--light);color:var(--blue);display:grid;place-items:center;font-size:16px;flex:none}
+  .setrow .tx{flex:1}
+  .setrow .tx .t{font-size:13.5px;font-weight:600}
+  .setrow .tx .d{font-size:11px;color:var(--ink-3);margin-top:2px;line-height:1.4}
+  .switch{width:46px;height:27px;border-radius:999px;background:#cdd4dd;position:relative;cursor:pointer;flex:none;transition:.2s;border:none}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .switch.on{background:var(--blue)} .switch.on::after{left:22px}
+
+  /* satisfaction slider (고객 체감효과) */
+  .satwrap{padding:4px 2px 0}
+  .sattrack{position:relative;height:8px;border-radius:999px;margin:30px 6px 8px;
+    background:linear-gradient(90deg,#d64545,#e08a1e,#c9cf38,#5bb47e,#1E9E5A)}
+  .satdots{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center}
+  .satdots .d{width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #cfd6df;cursor:pointer;transition:.15s;position:relative}
+  .satdots .d.on{border-color:var(--blue);transform:scale(1.18);box-shadow:0 0 0 4px rgba(26,86,160,.14)}
+  .satdots .d.sel{background:var(--blue);border-color:#fff;box-shadow:0 0 0 4px rgba(26,86,160,.25),0 3px 8px rgba(0,0,0,.2);transform:scale(1.5)}
+  .satlabs{display:flex;justify-content:space-between;margin:6px 0 2px;font-size:10px;color:var(--ink-3)}
+  .satout{text-align:center;margin-top:16px;font-size:13px;color:var(--ink-2)}
+  .satout b{font-size:26px;display:block;margin-top:3px;letter-spacing:-.5px}
+
+  /* bottom nav */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:calc(74px + env(safe-area-inset-bottom));background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;align-items:flex-start;padding:9px 6px env(safe-area-inset-bottom);z-index:50}
+  .tabbar button{flex:1;border:none;background:none;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--ink-3);padding:2px 0}
+  .tabbar button .ic{font-size:19px;line-height:1}
+  .tabbar button .lb{font-size:10px;font-weight:600}
+  .tabbar button.on{color:var(--blue)}
+
+  /* bottom sheet & drawer */
+  .scrim{position:absolute;inset:0;background:rgba(15,25,45,.42);opacity:0;pointer-events:none;transition:.25s;z-index:70}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;z-index:80;transform:translateY(110%);transition:transform .3s cubic-bezier(.22,1,.36,1);max-height:86%;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.2)}
+  .sheet.on{transform:translateY(0)}
+  .sheet .grip{width:42px;height:5px;border-radius:3px;background:#d7dde4;margin:10px auto 4px;flex:none}
+  .sheet .shead{padding:6px 18px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex:none}
+  .sheet .shead h3{margin:0;font-size:16px;font-weight:700}
+  .sheet .sbody{padding:16px 18px;overflow-y:auto}
+  .sheet .sbody::-webkit-scrollbar{width:0}
+  .kv{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .kv:last-of-type{border-bottom:none}
+  .kv .k{color:var(--ink-3)} .kv .v{font-weight:600;text-align:right}
+  .sfoot{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:9px;flex:none}
+
+  /* skeleton */
+  .skel{background:linear-gradient(90deg,#eef1f5 25%,#e2e7ee 37%,#eef1f5 63%);background-size:400% 100%;animation:sh 1.3s infinite;border-radius:8px}
+  @keyframes sh{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+  /* toast */
+  .toast{position:absolute;left:50%;bottom:92px;transform:translate(-50%,20px);background:#11203a;color:#fff;font-size:12.5px;font-weight:600;padding:11px 18px;border-radius:11px;opacity:0;transition:.25s;z-index:90;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  /* empty */
+  .empty{text-align:center;padding:50px 20px;color:var(--ink-3)}
+  .empty .e{font-size:42px;opacity:.5} .empty .t{font-size:13.5px;font-weight:600;margin-top:10px;color:var(--ink-2)} .empty .d{font-size:12px;margin-top:4px}
+
+  .note{font-size:11px;color:var(--ink-3);text-align:center;margin:10px 4px 2px;line-height:1.5}
+
+  /* fullscreen toggle */
+  .fsbtn{position:absolute;right:14px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:65;
+    width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.92);
+    backdrop-filter:blur(6px);display:grid;place-items:center;font-size:18px;cursor:pointer;box-shadow:var(--shadow-lg)}
+  .fsbtn:active{transform:scale(.93)}
+  .fs-on .fsbtn{display:none}
+  @media (display-mode:standalone),(display-mode:fullscreen){
+    .fsbtn{display:none}
+    .fsintro{display:none}
+  }
+
+  /* tap-to-start overlay (Figma-style) */
+  .fsintro{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    background:radial-gradient(900px 600px at 50% 30%,#1f3a6a,#0f1a2e 70%);color:#fff;cursor:pointer;text-align:center;padding:24px}
+  .fsintro .ico{width:74px;height:74px;border-radius:20px;background:linear-gradient(135deg,var(--blue),var(--accent));display:grid;place-items:center;font-size:30px;font-weight:800;box-shadow:0 12px 34px rgba(26,86,160,.5)}
+  .fsintro .t{font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .fsintro .d{font-size:13px;color:#aebfdc;line-height:1.6;max-width:260px}
+  .fsintro .cta{margin-top:8px;font-size:13.5px;font-weight:700;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:11px 22px;border-radius:999px}
+  .fsintro.hide{display:none}
+</style>
+</head>
+<body>
+
+  <!-- ===== phone ===== -->
+  <div class="phone">
+    <div class="screen">
+
+      <!-- app bar -->
+      <div class="appbar">
+        <div class="brand">
+          <div class="logo">CS</div>
+          <div class="ttl" id="appTitle">SC 메인<small id="appSub">영업 · 김세코 프로</small></div>
+        </div>
+        <div class="acts">
+          <button class="iconbtn" onclick="toast('검색은 프로토타입에서 비활성화됨')">🔍</button>
+          <button class="iconbtn" onclick="toast('알림 3건')"><span class="dot"></span>🔔</button>
+        </div>
+      </div>
+
+      <!-- content -->
+      <div class="content" id="content">
+
+        <!-- ============ SC 메인 ============ -->
+        <section class="view on" id="view-sc">
+          <div class="hero">
+            <div class="hi">좋은 아침이에요 ☀️</div>
+            <div class="nm">김세코 프로님</div>
+            <div class="role">영업 직원 (SC) · 강남2지점</div>
+            <div class="quick">
+              <a onclick="toast('오늘 방문 4건')"><span class="n">4</span>오늘 방문</a>
+              <a onclick="toast('신규 계약 2건')"><span class="n">2</span>신규 계약</a>
+              <a onclick="toast('미처리 3건')"><span class="n">3</span>미처리</a>
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="stat" id="statTime">
+              <div class="lab">⏱ 근무시간</div>
+              <button class="lock" onclick="togglePriv('statTime','시간')" title="공개 설정">🔓</button>
+              <div class="val">7시간 12분</div>
+              <div class="sub">정상 근무 중</div>
+            </div>
+            <div class="stat" id="statMoney">
+              <div class="lab">💰 계약달성</div>
+              <button class="lock" onclick="togglePriv('statMoney','금액')">🔓</button>
+              <div class="val">₩ 38.5M</div>
+              <div class="sub">월 목표 77%</div>
+            </div>
+          </div>
+          <div class="note">🔒 근무시간·계약금액은 <b>본인 선택</b>에 따라 공개 — 카드의 자물쇠를 눌러 표시/숨김</div>
+
+          <div class="sectit">
+            <h3>주요 서비스</h3>
+            <button class="more" id="editBtn" onclick="toggleEdit()">순서 편집</button>
+          </div>
+          <div class="svcgrid" id="svcGrid"></div>
+          <button class="btn ghost" style="margin-top:4px" onclick="toast('주요서비스 전체 보기 (12개)')">＋ 주요서비스 전체 보기</button>
+
+          <div class="sectit"><h3>최근 활동</h3><button class="more" onclick="toast('전체 활동 보기')">전체</button></div>
+          <div class="card" style="padding:4px 14px">
+            <div class="row"><div class="ic">📝</div><div class="tx"><div class="t">스타벅스 강남점 계약 검토</div><div class="d">제안서 발송 완료</div></div><span class="badge b-ok">완료</span></div>
+            <div class="row"><div class="ic">📞</div><div class="tx"><div class="t">롯데마트 잠실 담당자 통화</div><div class="d">재계약 일정 협의</div></div><span class="badge b-run">진행중</span></div>
+            <div class="row"><div class="ic">📅</div><div class="tx"><div class="t">CGV 용산 현장 실사</div><div class="d">내일 14:00 예정</div></div><span class="badge b-wait">대기</span></div>
+          </div>
+        </section>
+
+        <!-- ============ DE 메인 ============ -->
+        <section class="view" id="view-de">
+          <div class="hero" style="background:linear-gradient(135deg,#155a4a,#1e8a6e)">
+            <div class="hi">현장 업무를 시작하세요 🔧</div>
+            <div class="nm">박기술 기사님</div>
+            <div class="role">기술 직원 (DE) · 방제 1팀</div>
+            <div class="quick">
+              <a onclick="toast('금일 작업 6건')"><span class="n">6</span>금일 작업</a>
+              <a onclick="toast('완료 2건')"><span class="n">2</span>완료</a>
+              <a onclick="setMod('sol')"><span class="n">4</span>대상 업체</a>
+            </div>
+          </div>
+
+          <div class="notice">
+            <div class="i">📢</div>
+            <div><div class="t">신규 약제 안전 교육 (필수)</div><div class="d">6/10까지 모바일 교육 이수 — 미이수 시 현장 배정 제한</div></div>
+          </div>
+
+          <div class="sectit"><h3>빠른 실행</h3><span class="badge b-run">원탭 처리</span></div>
+          <div class="qactions">
+            <div class="qa" onclick="toast('서비스 접수 등록')"><div class="ic">➕</div><div class="nm">접수등록</div></div>
+            <div class="qa" onclick="toast('점검 체크리스트')"><div class="ic">✅</div><div class="nm">점검</div></div>
+            <div class="qa" onclick="toast('약제 사용량 입력')"><div class="ic">🧪</div><div class="nm">약제</div></div>
+            <div class="qa" onclick="openSat()"><div class="ic">📈</div><div class="nm">체감효과</div></div>
+            <div class="qa" onclick="toast('전자 서명')"><div class="ic">✍️</div><div class="nm">서명</div></div>
+          </div>
+
+          <div class="sectit"><h3>오늘의 업무</h3><button class="more" onclick="setMod('sol')">SOL 연동</button></div>
+          <div class="card" style="padding:4px 14px">
+            <div class="row" onclick="openCompany('de1')" style="cursor:pointer"><div class="ic">🏢</div><div class="tx"><div class="t">한빛아파트 101동</div><div class="d">정기 방제 · 09:30</div></div><span class="chev">›</span></div>
+            <div class="row" onclick="openCompany('de2')" style="cursor:pointer"><div class="ic">🍽️</div><div class="tx"><div class="t">그린푸드 공장</div><div class="d">긴급 방역 · 11:00</div></div><span class="chev">›</span></div>
+            <div class="row" onclick="openCompany('de3')" style="cursor:pointer"><div class="ic">🏬</div><div class="tx"><div class="t">메가몰 지하주차장</div><div class="d">설치 점검 · 14:30</div></div><span class="chev">›</span></div>
+          </div>
+
+          <button class="btn primary" onclick="openSat()">📈 고객 체감효과 입력</button>
+        </section>
+
+        <!-- ============ SOL 플래너 ============ -->
+        <section class="view" id="view-sol">
+          <div class="sectit" style="margin-top:6px"><h3>서비스 대상 업체</h3><span class="badge b-run" id="solCount">4개 업체</span></div>
+          <div class="seg" id="solSeg">
+            <button class="on" onclick="solRange(this,'일간')">일간</button>
+            <button onclick="solRange(this,'주간')">주간</button>
+            <button onclick="solRange(this,'월간')">월간</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin:-4px 2px 12px;font-size:12px;color:var(--ink-3)">
+            <span>📅</span><span id="solDate">2026.06.02 (화) · 오늘</span>
+            <span style="margin-left:auto;color:var(--wait)">● 오프라인 캐시</span>
+          </div>
+
+          <div id="solList"></div>
+        </section>
+
+        <!-- ============ 협력업체 포털 ============ -->
+        <section class="view" id="view-partner">
+          <div class="hero" style="background:linear-gradient(135deg,#4a3a8a,#7b5bd6)">
+            <div class="hi">협력업체 파트너 포털 🤝</div>
+            <div class="nm">대한설비 (파트너사)</div>
+            <div class="role">배정 업무 5건 · 미완료 3건</div>
+          </div>
+          <div class="note">필요한 <b>핵심 정보만</b> 카드로 — 상세는 <b>자세히 보기</b>로 분리해 정보 접근성 확보</div>
+          <div id="partnerList"></div>
+        </section>
+
+        <!-- ============ 나의 / 개인정보 설정 ============ -->
+        <section class="view" id="view-my">
+          <div class="card" style="display:flex;align-items:center;gap:13px">
+            <div style="width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;display:grid;place-items:center;font-size:22px;font-weight:800">김</div>
+            <div style="flex:1"><div style="font-size:16px;font-weight:700">김세코 프로</div><div style="font-size:12px;color:var(--ink-3);margin-top:2px">영업 직원 (SC) · 강남2지점</div></div>
+            <button class="iconbtn" onclick="toast('프로필 편집')">›</button>
+          </div>
+
+          <div class="sectit"><h3>개인정보 공개 설정</h3><span class="badge b-run">차등 제공</span></div>
+          <div class="card" style="padding:2px 14px">
+            <div class="setrow"><div class="ic">⏱</div><div class="tx"><div class="t">근무시간 정보 표시</div><div class="d">홈 화면에 근무시간/근태 노출</div></div><button class="switch on" data-link="statTime" onclick="setSwitch(this)"></button></div>
+            <div class="setrow"><div class="ic">💰</div><div class="tx"><div class="t">계약달성 금액 표시</div><div class="d">홈 화면에 매출/목표 달성률 노출</div></div><button class="switch on" data-link="statMoney" onclick="setSwitch(this)"></button></div>
+            <div class="setrow"><div class="ic">📸</div><div class="tx"><div class="t">민감정보 화면 캡처 방지</div><div class="d">근무시간·금액 화면 캡처 차단</div></div><button class="switch" onclick="setSwitch(this)"></button></div>
+          </div>
+
+          <div class="sectit"><h3>나의 메뉴 관리</h3><button class="more" onclick="setMod('sc');toggleEdit()">편집</button></div>
+          <div class="card" style="padding:4px 14px">
+            <div class="row"><div class="ic">⭐</div><div class="tx"><div class="t">즐겨찾기 메뉴</div><div class="d">8개 · 드래그로 순서 변경</div></div><span class="chev">›</span></div>
+            <div class="row"><div class="ic">🧩</div><div class="tx"><div class="t">주요서비스 구성</div><div class="d">개인별 노출/순서 커스터마이징</div></div><span class="chev">›</span></div>
+            <div class="row"><div class="ic">🔔</div><div class="tx"><div class="t">알림 설정</div><div class="d">업무·공지 알림 관리</div></div><span class="chev">›</span></div>
+          </div>
+
+          <div class="sectit"><h3>지원</h3></div>
+          <div class="card" style="padding:4px 14px">
+            <div class="row"><div class="ic">❓</div><div class="tx"><div class="t">도움말 / FAQ</div></div><span class="chev">›</span></div>
+            <div class="row"><div class="ic">🛡️</div><div class="tx"><div class="t">개인정보 처리방침</div><div class="d">WCAG 2.1 AA · 개인정보보호법 준수</div></div><span class="chev">›</span></div>
+            <div class="row"><div class="ic">↩️</div><div class="tx"><div class="t">로그아웃</div></div><span class="chev">›</span></div>
+          </div>
+          <div class="note">버전 1.0.0 (Prototype) · CESCO 공통 디자인 시스템</div>
+        </section>
+
+      </div><!-- /content -->
+
+      <!-- bottom nav -->
+      <nav class="tabbar" id="tabbar">
+        <button class="on" data-mod="sc" onclick="setMod('sc')"><span class="ic">🏠</span><span class="lb">SC 홈</span></button>
+        <button data-mod="de" onclick="setMod('de')"><span class="ic">🔧</span><span class="lb">DE 홈</span></button>
+        <button data-mod="sol" onclick="setMod('sol')"><span class="ic">🗂️</span><span class="lb">SOL</span></button>
+        <button data-mod="partner" onclick="setMod('partner')"><span class="ic">🤝</span><span class="lb">협력</span></button>
+        <button data-mod="my" onclick="setMod('my')"><span class="ic">👤</span><span class="lb">나의</span></button>
+      </nav>
+
+      <!-- scrim + sheet + drawer -->
+      <div class="scrim" id="scrim" onclick="closeAll()"></div>
+
+      <div class="sheet" id="sheet">
+        <div class="grip"></div>
+        <div class="shead"><h3 id="sheetTitle">상세</h3><button class="iconbtn" style="width:32px;height:32px" onclick="closeAll()">✕</button></div>
+        <div class="sbody" id="sheetBody"></div>
+        <div class="sfoot" id="sheetFoot"></div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+    </div>
+  </div>
+
+  <!-- tap-to-start: enters immersive fullscreen on first tap -->
+  <div class="fsintro" id="fsintro" onclick="startFs()">
+    <div class="ico">CS</div>
+    <div class="t">CESCO 모바일 오피스</div>
+    <div class="d">화면을 탭하면 상태바·네비게이션 바를 덮고<br>전체 화면으로 프로토타입을 시작합니다</div>
+    <div class="cta">탭하여 전체화면 시작 ▶</div>
+  </div>
+
+<script>
+/* ===================== data ===================== */
+const services = [
+  {ic:'📋',nm:'영업일지',n:0},{ic:'🤝',nm:'계약관리',n:2},{ic:'🏢',nm:'고객사',n:0},{ic:'📅',nm:'방문일정',n:4},
+  {ic:'💳',nm:'견적/청구',n:0},{ic:'📈',nm:'실적현황',n:0},{ic:'🧪',nm:'서비스',n:1},{ic:'📞',nm:'고객문의',n:3}
+];
+
+const companies = {
+  sol:[
+    {id:'s1',cls:'',nm:'스타벅스 강남R점',type:'정기 방제',badge:'b-run',st:'진행중',mgr:'김세코',addr:'서울 강남구 테헤란로 152',phone:'02-555-0101',cycle:'월 2회',next:'2026.06.02',last:'2026.05.19',equip:'포충등 4 · 트랩 12'},
+    {id:'s2',cls:'ins',nm:'롯데마트 잠실점',type:'설치',badge:'b-wait',st:'대기',mgr:'김세코',addr:'서울 송파구 올림픽로 240',phone:'02-555-0202',cycle:'신규',next:'2026.06.02',last:'-',equip:'IoT 모니터링 신규 8'},
+    {id:'s3',cls:'chk',nm:'CGV 용산아이파크',type:'점검',badge:'b-ok',st:'완료',mgr:'박기술',addr:'서울 용산구 한강대로23길 55',phone:'02-555-0303',cycle:'월 1회',next:'2026.06.30',last:'2026.06.01',equip:'쥐덫 20 · 연막 2'},
+    {id:'s4',cls:'as',nm:'그린푸드 1공장',type:'AS',badge:'b-err',st:'긴급',mgr:'박기술',addr:'경기 화성시 동탄산단로 88',phone:'031-555-0404',cycle:'수시',next:'2026.06.02',last:'2026.05.28',equip:'방충망 · 에어커튼 6'}
+  ],
+   de:{
+    de1:{nm:'한빛아파트 101동',type:'정기 방제',badge:'b-run',st:'진행중',mgr:'박기술',addr:'서울 노원구 동일로 1234',phone:'02-555-0505',cycle:'월 1회',next:'오늘 09:30',last:'2026.05.02',equip:'공동현관 트랩 6'},
+    de2:{nm:'그린푸드 공장',type:'긴급 방역',badge:'b-err',st:'긴급',mgr:'박기술',addr:'경기 화성시 동탄산단로 88',phone:'031-555-0404',cycle:'수시',next:'오늘 11:00',last:'2026.05.28',equip:'연막 4 · 잔류분무'},
+    de3:{nm:'메가몰 지하주차장',type:'설치 점검',badge:'b-wait',st:'대기',mgr:'박기술',addr:'서울 강서구 마곡중앙로 100',phone:'02-555-0606',cycle:'분기',next:'오늘 14:30',last:'2026.03.15',equip:'포충등 12'}
+  }
+};
+
+const partnerTasks = [
+  {id:'p1',cls:'ins',type:'설치',badge:'b-run',st:'진행중',nm:'IoT 방제 센서 설치',cust:'롯데마트 잠실점',date:'06.02 10:00',addr:'서울 송파구 올림픽로 240',equip:'스마트 트랩 8대',contact:'현장 김주임 010-1234-5678',memo:'지하 식품관 우선 설치. 전원 콘센트 위치 사전 확인 필요.'},
+  {id:'p2',cls:'chk',type:'점검',badge:'b-wait',st:'대기',nm:'정기 장비 점검',cust:'CGV 용산',date:'06.03 14:00',addr:'서울 용산구 한강대로23길 55',equip:'포충등 6대 · 쥐덫 20',contact:'시설 이과장 010-2222-3333',memo:'상영관 운영 외 시간(오전) 점검 권장.'},
+  {id:'p3',cls:'as',type:'AS',badge:'b-err',st:'긴급',nm:'에어커튼 오작동 AS',cust:'그린푸드 1공장',date:'06.02 16:00',addr:'경기 화성시 동탄산단로 88',equip:'에어커튼 2대',contact:'관리 박부장 010-4444-5555',memo:'입고장 에어커튼 풍압 저하. 부품 교체 가능성 — 모터 모듈 지참.'}
+];
+
+const satLabels=['매우감소','감소','유지','증가','매우증가'];
+const satFaces=['😟','🙁','😐','🙂','😄'];
+
+/* ===================== module switch ===================== */
+const titles={sc:['SC 메인','영업 · 김세코 프로'],de:['DE 메인','기술 · 박기술 기사'],sol:['SOL 플래너','기간별 업체 관리'],partner:['협력업체 포털','대한설비 파트너'],my:['나의','계정 · 개인정보']};
+function setMod(m){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+m).classList.add('on');
+  document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.mod===m));
+  document.getElementById('appTitle').firstChild.textContent=titles[m][0];
+  document.getElementById('appSub').textContent=titles[m][1];
+  document.getElementById('content').scrollTop=0;
+  if(editing) toggleEdit();
+}
+
+/* ===================== privacy ===================== */
+function togglePriv(id){
+  const el=document.getElementById(id); const val=el.querySelector('.val'); const lock=el.querySelector('.lock');
+  const on=val.classList.toggle('masked'); el.classList.toggle('priv',on);
+  lock.textContent=on?'🔒':'🔓';
+  // sync settings switch
+  const sw=document.querySelector('.switch[data-link="'+id+'"]'); if(sw) sw.classList.toggle('on',!on);
+  toast(on?'정보를 숨겼습니다':'정보를 공개했습니다');
+}
+function setSwitch(btn){
+  const on=btn.classList.toggle('on');
+  const link=btn.dataset.link;
+  if(link){
+    const el=document.getElementById(link),val=el.querySelector('.val'),lock=el.querySelector('.lock');
+    val.classList.toggle('masked',!on); el.classList.toggle('priv',!on); lock.textContent=on?'🔓':'🔒';
+  }
+  toast(on?'표시 켜짐':'표시 꺼짐');
+}
+
+/* ===================== services grid + reorder ===================== */
+const grid=document.getElementById('svcGrid');
+function renderSvc(){
+  grid.innerHTML='';
+  services.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='svc'+(editing?' handle':''); d.draggable=editing; d.dataset.i=i;
+    d.innerHTML=`<div class="ic">${s.ic}</div><div class="nm">${s.nm}</div>`+(s.n?`<span class="nbadge">${s.n}</span>`:'');
+    if(!editing) d.onclick=()=>toast(s.nm+' 열기');
+    grid.appendChild(d);
+  });
+  if(editing) enableDrag();
+}
+let editing=false;
+function toggleEdit(){
+  editing=!editing;
+  document.getElementById('svcGrid').classList.toggle('editing',editing);
+  document.getElementById('editBtn').textContent=editing?'완료':'순서 편집';
+  renderSvc();
+  toast(editing?'드래그하여 순서를 바꾸세요':'순서가 저장되었습니다');
+}
+let dragEl=null;
+function enableDrag(){
+  grid.querySelectorAll('.svc').forEach(el=>{
+    el.addEventListener('dragstart',()=>{dragEl=el;el.classList.add('dragging')});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragEl=null});
+    el.addEventListener('dragover',e=>{e.preventDefault();
+      const t=e.currentTarget; if(t===dragEl) return;
+      const a=+dragEl.dataset.i, b=+t.dataset.i;
+      const moved=services.splice(a,1)[0]; services.splice(b,0,moved); renderSvc();
+    });
+  });
+}
+
+/* ===================== SOL ===================== */
+function renderSol(){
+  const list=document.getElementById('solList'); list.innerHTML='';
+  companies.sol.forEach(c=>{
+    const el=document.createElement('div');
+    el.className='ccard '+c.cls; el.onclick=()=>openCompany('sol:'+c.id);
+    el.innerHTML=`<div class="top"><div class="nm">${c.nm}</div><span class="badge ${c.badge}">${c.st}</span></div>
+      <div class="meta"><span>🔧 ${c.type}</span><span>👤 ${c.mgr}</span><span>📍 ${c.addr.split(' ').slice(0,2).join(' ')}</span></div>
+      <div class="foot"><span style="font-size:11.5px;color:var(--ink-3)">방문 ${c.next}</span><span class="detail">자세히 보기 ›</span></div>`;
+    list.appendChild(el);
+  });
+}
+function solRange(btn,label){
+  document.querySelectorAll('#solSeg button').forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  const map={'일간':['2026.06.02 (화) · 오늘','4개 업체'],'주간':['2026.06.01 ~ 06.07','11개 업체'],'월간':['2026.06.01 ~ 06.30','38개 업체']};
+  document.getElementById('solDate').textContent=map[label][0];
+  document.getElementById('solCount').textContent=map[label][1];
+  skeletonThen('solList',renderSol);
+}
+
+/* ===================== partner ===================== */
+function renderPartner(){
+  const list=document.getElementById('partnerList'); list.innerHTML='';
+  partnerTasks.forEach(t=>{
+    const el=document.createElement('div'); el.className='ccard '+t.cls;
+    el.innerHTML=`<div class="top"><div class="nm">${t.nm}</div><span class="badge ${t.badge}">${t.st}</span></div>
+      <div class="meta"><span>🏷️ ${t.type}</span><span>🏢 ${t.cust}</span><span>🕒 ${t.date}</span></div>
+      <div class="foot"><button class="btn secondary" style="width:auto;height:36px;padding:0 14px;font-size:12.5px" onclick="event.stopPropagation();openPartner('${t.id}')">자세히 보기</button>
+      <button class="btn primary" style="width:auto;height:36px;padding:0 14px;font-size:12.5px" onclick="event.stopPropagation();openComplete('${t.nm}')">처리 완료</button></div>`;
+    list.appendChild(el);
+  });
+}
+
+/* ===================== bottom sheets ===================== */
+const scrim=document.getElementById('scrim'),sheet=document.getElementById('sheet');
+const sTitle=document.getElementById('sheetTitle'),sBody=document.getElementById('sheetBody'),sFoot=document.getElementById('sheetFoot');
+function openSheet(title,body,foot){ sTitle.textContent=title; sBody.innerHTML=body; sFoot.innerHTML=foot||''; scrim.classList.add('on'); sheet.classList.add('on'); }
+function closeAll(){ scrim.classList.remove('on'); sheet.classList.remove('on'); }
+
+function openCompany(key){
+  let c; if(key.startsWith('sol:')){c=companies.sol.find(x=>x.id===key.slice(4));} else {c=companies.de[key];}
+  if(!c) return;
+  const body=`<span class="badge ${c.badge}" style="margin-bottom:10px">${c.st}</span>
+    <div class="kv"><span class="k">서비스 유형</span><span class="v">${c.type}</span></div>
+    <div class="kv"><span class="k">담당자</span><span class="v">${c.mgr}</span></div>
+    <div class="kv"><span class="k">주소</span><span class="v">${c.addr}</span></div>
+    <div class="kv"><span class="k">연락처</span><span class="v">${c.phone}</span></div>
+    <div class="kv"><span class="k">서비스 주기</span><span class="v">${c.cycle}</span></div>
+    <div class="kv"><span class="k">다음 방문</span><span class="v">${c.next}</span></div>
+    <div class="kv"><span class="k">최근 방문</span><span class="v">${c.last}</span></div>
+    <div class="kv"><span class="k">설치 장비</span><span class="v">${c.equip}</span></div>`;
+  const foot=`<button class="btn ghost" onclick="toast('📞 전화 연결')">📞 전화</button>
+    <button class="btn ghost" onclick="toast('🗺️ 지도 보기')">🗺️ 지도</button>
+    <button class="btn primary" onclick="toast('서비스 기록 작성')">서비스 기록</button>`;
+  openSheet(c.nm,body,foot);
+}
+
+function openPartner(id){
+  const t=partnerTasks.find(x=>x.id===id);
+  const body=`<span class="badge ${t.badge}" style="margin-bottom:10px">${t.type} · ${t.st}</span>
+    <div class="kv"><span class="k">고객사</span><span class="v">${t.cust}</span></div>
+    <div class="kv"><span class="k">예정 일시</span><span class="v">${t.date}</span></div>
+    <div class="kv"><span class="k">현장 주소</span><span class="v">${t.addr}</span></div>
+    <div class="kv"><span class="k">대상 장비</span><span class="v">${t.equip}</span></div>
+    <div class="kv"><span class="k">현장 담당</span><span class="v">${t.contact}</span></div>
+    <div style="margin-top:14px;background:var(--light);border-radius:11px;padding:12px;font-size:12.5px;color:var(--ink-2);line-height:1.6"><b style="color:var(--blue)">📌 작업 메모</b><br>${t.memo}</div>`;
+  const foot=`<button class="btn ghost" onclick="toast('📷 사진 첨부')">📷 사진</button>
+    <button class="btn ghost" onclick="toast('⚠️ 이슈 등록')">⚠️ 이슈</button>
+    <button class="btn primary" onclick="openComplete('${t.nm}')">처리 완료</button>`;
+  openSheet(t.nm,body,foot);
+}
+
+function openComplete(nm){
+  const body=`<div style="text-align:center;padding:6px 0 4px"><div style="font-size:40px">✅</div>
+    <div style="font-size:15px;font-weight:700;margin-top:6px">${nm}</div>
+    <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px">처리 완료 보고를 등록합니다</div></div>
+    <div class="kv"><span class="k">현장 사진</span><span class="v" style="color:var(--accent)">＋ 사진 첨부 (0)</span></div>
+    <div class="kv"><span class="k">고객 서명</span><span class="v" style="color:var(--accent)">✍️ 서명 받기</span></div>
+    <div style="margin-top:12px"><textarea placeholder="처리 내용 메모..." style="width:100%;height:74px;border:1px solid var(--line);border-radius:11px;padding:11px;font-family:inherit;font-size:13px;resize:none"></textarea></div>`;
+  const foot=`<button class="btn ghost" onclick="closeAll()">취소</button><button class="btn primary" onclick="closeAll();toast('✅ 처리 완료 보고가 등록되었습니다')">완료 보고 제출</button>`;
+  openSheet('처리 완료 등록',body,foot);
+}
+
+/* ===================== 고객 체감효과 슬라이더 ===================== */
+let satVal=2;
+function openSat(){
+  const dots=[0,1,2,3,4].map(i=>`<div class="d${i===satVal?' sel':''}" data-v="${i}" onclick="setSat(${i})"></div>`).join('');
+  const body=`<div class="satwrap">
+    <div style="text-align:center;font-size:13px;color:var(--ink-2)">한빛아파트 101동 · 정기 방제</div>
+    <div class="sattrack"><div class="satdots" id="satDots">${dots}</div></div>
+    <div class="satlabs"><span>매우감소</span><span>유지</span><span>매우증가</span></div>
+    <div class="satout">선택한 체감효과<b id="satOut">${satFaces[satVal]} ${satLabels[satVal]}</b></div>
+    <div class="note" style="margin-top:14px">5단계를 모두 나열하지 않고 <b>한 손 슬라이더</b>로 선택 — 각 단계에서 햅틱 피드백</div>
+  </div>`;
+  const foot=`<button class="btn ghost" onclick="closeAll()">취소</button><button class="btn primary" onclick="closeAll();toast('체감효과 「'+satLabels[satVal]+'」 저장됨')">저장</button>`;
+  openSheet('고객 체감효과 입력',body,foot);
+}
+function setSat(v){
+  satVal=v;
+  document.querySelectorAll('#satDots .d').forEach(d=>{const i=+d.dataset.v;d.classList.toggle('sel',i===v);d.classList.toggle('on',i<=v&&i!==v?false:i===v);});
+  document.getElementById('satOut').textContent=satFaces[v]+' '+satLabels[v];
+  if(navigator.vibrate) navigator.vibrate(8);
+}
+
+/* ===================== skeleton + toast ===================== */
+function skeletonThen(id,fn){
+  const el=document.getElementById(id);
+  el.innerHTML=Array(3).fill('<div class="card" style="padding:15px"><div class="skel" style="height:14px;width:55%"></div><div class="skel" style="height:11px;width:80%;margin-top:10px"></div><div class="skel" style="height:11px;width:40%;margin-top:8px"></div></div>').join('');
+  setTimeout(fn,650);
+}
+let tt;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),1800); }
+
+/* ===================== PWA service worker ===================== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+
+/* ===================== intro ===================== */
+function startFs(){
+  // 몰입형 전체화면: 상태바·삼성 네비바·크롬바를 모두 숨긴다
+  const el=document.documentElement;
+  const req=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(req){ try{ req.call(el); }catch(e){} }
+  document.getElementById('fsintro').classList.add('hide');
+}
+
+/* ===================== init ===================== */
+renderSvc(); renderSol(); renderPartner();
+</script>
+</body>
+</html>
