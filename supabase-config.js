@@ -13,8 +13,8 @@ window.SUPABASE_CONFIG = {
   // anon(publishable) 공개 키. (my-academy 프로젝트와 공유)
   anonKey: 'sb_publishable_WbGwEtZRMFYCPRTvSiRdhA_tm16_o4J',
 
-  // 아직 Supabase Auth 사용자가 없어 false. 사용자 생성 후 true 로 바꾸면 로그인 화면이 뜹니다.
-  requireLogin: false,
+  // 로그인 화면 사용. 대시보드에서 자동확인 사용자를 먼저 만들어야 로그인됩니다.
+  requireLogin: true,
 
   // 실제 테이블 이름으로 맞춰주세요. (컬럼은 현재 목업 키와 동일하다고 가정)
   tables: {

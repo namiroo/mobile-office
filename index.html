@@ -524,7 +524,17 @@ function toggleEdit(){
   document.getElementById('svcGrid').classList.toggle('editing',editing);
   document.getElementById('editBtn').textContent=editing?'완료':'순서 편집';
   renderSvc();
-  toast(editing?'드래그하여 순서를 바꾸세요':'순서가 저장되었습니다');
+  if(editing){ toast('드래그하여 순서를 바꾸세요'); }
+  else { saveServiceOrder(); toast('순서가 저장되었습니다'); }
+}
+// 서비스 순서를 Supabase 에 저장 (sort 컬럼)
+async function saveServiceOrder(){
+  if(!sbReady()) return;
+  const T=CFG.tables.services;
+  try{
+    await Promise.all(services.map((s,i)=>
+      s.id!=null ? sbClient.from(T).update({sort:i+1}).eq('id',s.id) : Promise.resolve()));
+  }catch(e){ console.warn('[supabase] 순서 저장 실패:', e.message); toast('⚠️ 순서 저장 실패 — 권한(RLS) 확인'); }
 }
 let dragEl=null;
 function enableDrag(){
@@ -592,8 +602,48 @@ function openCompany(key){
     <div class="kv"><span class="k">설치 장비</span><span class="v">${c.equip}</span></div>`;
   const foot=`<button class="btn ghost" onclick="toast('📞 전화 연결')">📞 전화</button>
     <button class="btn ghost" onclick="toast('🗺️ 지도 보기')">🗺️ 지도</button>
-    <button class="btn primary" onclick="toast('서비스 기록 작성')">서비스 기록</button>`;
+    <button class="btn primary" onclick="openCompanyEdit('${key}')">✏️ 정보 수정</button>`;
   openSheet(c.nm,body,foot);
+}
+
+const ST_OPTS=['진행중','대기','완료','긴급'];
+const ST_BADGE={'진행중':'b-run','대기':'b-wait','완료':'b-ok','긴급':'b-err'};
+const ST_CLS={'진행중':'','대기':'ins','완료':'chk','긴급':'as'};
+function findCompany(key){
+  return key.startsWith('sol:') ? companies.sol.find(x=>x.id===key.slice(4)) : companies.de[key];
+}
+function openCompanyEdit(key){
+  const c=findCompany(key); if(!c) return;
+  const sel=ST_OPTS.map(o=>`<option value="${o}"${o===c.st?' selected':''}>${o}</option>`).join('');
+  const inp='width:100%;height:44px;border:1px solid var(--line);border-radius:11px;padding:0 12px;font-family:inherit;font-size:13.5px;margin-top:4px';
+  const body=`<div style="display:flex;flex-direction:column;gap:12px">
+      <label style="font-size:12px;color:var(--ink-3);font-weight:600">담당자<input id="editMgr" style="${inp}" value="${c.mgr||''}"></label>
+      <label style="font-size:12px;color:var(--ink-3);font-weight:600">다음 방문<input id="editNext" style="${inp}" value="${c.next||''}"></label>
+      <label style="font-size:12px;color:var(--ink-3);font-weight:600">상태<select id="editSt" style="${inp};background:#fff">${sel}</select></label>
+    </div>`;
+  const foot=`<button class="btn ghost" onclick="closeAll()">취소</button>
+    <button class="btn primary" onclick="saveCompany('${c.id}')">저장</button>`;
+  openSheet(c.nm+' · 정보 수정',body,foot);
+}
+async function saveCompany(id){
+  const g=i=>(document.getElementById(i)||{}).value||'';
+  const mgr=g('editMgr'), next=g('editNext'), st=g('editSt');
+  const badge=ST_BADGE[st]||'', cls=ST_CLS[st]||'';
+  if(sbReady()){
+    try{
+      const { error } = await sbClient.from(CFG.tables.companies)
+        .update({ mgr, next, st, badge, cls }).eq('id', id);
+      if(error) throw error;
+      await loadCompanies(); renderSol();
+      closeAll(); toast('✅ 정보가 저장되었습니다'); return;
+    }catch(e){
+      console.warn('[supabase] 업체 저장 실패:', e.message);
+      closeAll(); toast('⚠️ 저장 실패 — 권한(RLS) 확인'); return;
+    }
+  }
+  const c=companies.sol.find(x=>x.id===id)||companies.de[id];
+  if(c){ c.mgr=mgr; c.next=next; c.st=st; c.badge=badge; c.cls=cls; renderSol(); }
+  closeAll(); toast('✅ 정보가 저장되었습니다');
 }
 
 function openPartner(id){
